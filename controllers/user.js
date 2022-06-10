@@ -222,7 +222,7 @@ exports.signin = async (req, res) => {
     });
   } else {
     try {
-      await User.findOne({ username }).then((data) => {
+      await User.find({ username }).then((data) => {
         if (data.length) {
           // user exists
           // check is user email is verified
