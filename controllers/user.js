@@ -222,7 +222,7 @@ exports.signin = async (req, res) => {
     });
   } else {
     try {
-      await User.find({ username }).then((data) => {
+      await User.findOne({ username }).then((data) => {
         if (data.length) {
           // user exists
           // check is user email is verified
@@ -512,8 +512,8 @@ const isVerified = (users) => {
 };
 
 exports.updateNotification = async (req, res) => {
-  const { userId, notificationType, notificationIds } = req.body;
+  const { userId, notificationType, notificationId } = req.body;
   const objectToPush = {};
-  objectToPush[notificationType] = notificationIds;
+  objectToPush[notificationType] = notificationId;
   User.updateOne({ _id: userId }, { $push: objectToPush });
 };
