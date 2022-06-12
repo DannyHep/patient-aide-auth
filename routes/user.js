@@ -11,7 +11,7 @@ const bcrypt = require("bcrypt");
 router.post("/signin", userController.signin);
 router.post("/requestPasswordReset", userController.sendResetPasswordEmail);
 router.post("/resetPassword", userController.resetPassword);
-router.post("/updateNotification", userController.updateNotification);
+router.put("/updateNotification", userController.updateNotification);
 
 router.put("/signup", userController.signup);
 

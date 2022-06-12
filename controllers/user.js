@@ -511,9 +511,16 @@ const isVerified = (users) => {
   return users.some((user) => user.verified);
 };
 
-exports.updateNotification = async (req, res) => {
+exports.updateNotification = (req, res) => {
   const { userId, notificationType, notificationId } = req.body;
   const objectToPush = {};
-  objectToPush[notificationType] = notificationId;
-  User.updateOne({ _id: userId }, { $push: objectToPush });
+  objectToPush[notificationType] = [notificationId];
+
+  User.updateOne({ _id: userId }, { $push: objectToPush }, (err, result) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(result);
+    }
+  });
 };
