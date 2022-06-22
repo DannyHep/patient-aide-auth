@@ -524,3 +524,15 @@ exports.updateNotification = (req, res) => {
     }
   });
 };
+
+exports.toggleValidicStatus = (req, res) => {
+  const { userId, status } = req.body;
+
+  User.updateOne({ _id: userId }, { verified: status }, (err, result) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(result);
+    }
+  });
+};

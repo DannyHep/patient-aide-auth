@@ -18,6 +18,7 @@ const UserSchema = new Schema({
       type: String,
     },
   ],
+  validicAccess: Boolean,
 });
 
 const User = mongoose.model("User", UserSchema);

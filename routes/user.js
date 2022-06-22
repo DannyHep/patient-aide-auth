@@ -12,6 +12,7 @@ router.post("/signin", userController.signin);
 router.post("/requestPasswordReset", userController.sendResetPasswordEmail);
 router.post("/resetPassword", userController.resetPassword);
 router.put("/updateNotification", userController.updateNotification);
+router.put("/updateValidicStatus", userController.toggleValidicStatus)
 
 router.put("/signup", userController.signup);
 
