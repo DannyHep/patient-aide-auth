@@ -9,7 +9,9 @@ const PasswordReset = require("../models/PasswordReset");
 const bcrypt = require("bcrypt");
 
 // email handler
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
+const sendgridMail = require("@sendgrid/mail");
+sendgridMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // unique string
 const { v4: uuidv4 } = require("uuid");
@@ -17,23 +19,18 @@ const { v4: uuidv4 } = require("uuid");
 // env variable
 require("dotenv").config();
 
-// nodemailer config
-let transporter = nodemailer.createTransport({
-  service: "Outlook365",
-  auth: {
-    user: process.env.AUTH_EMAIL,
-    pass: process.env.AUTH_PASSWORD,
-  },
-});
-
-// testing nodemailer config
-transporter.verify((error, success) => {
-  if (error) {
+// testing sendgrid config
+const sendMail = async (options) => {
+  try {
+    await sendgridMail.send(options);
+    console.log("Message was sent successfully");
+  } catch (error) {
     console.log(error);
-  } else {
-    console.log("Transporter ready for messages:", success);
+    if (error.response) {
+      console.log(error.response.body);
+    }
   }
-});
+};
 
 exports.checkUserData = async (req, res) => {
   User.find(req.query)
@@ -41,12 +38,12 @@ exports.checkUserData = async (req, res) => {
       if (data.length) {
         res.json({
           status: "Pending",
-          message: ` already taken`,
+          message: "already taken",
         });
       } else {
         res.json({
           status: "Pending",
-          message: `is unique`,
+          message: "is unique",
         });
       }
     })
@@ -60,8 +57,7 @@ exports.checkUserData = async (req, res) => {
 };
 
 exports.signup = async (req, res) => {
-  let { email, password, registrationCode, validationCode } = req.body;
-
+  const { email, password, registrationCode, validationCode } = req.body;
   if (utils.containsEmptyCredentials(req.body)) {
     res.json({
       status: "Failed",
@@ -153,7 +149,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = "http://localhost:8080/";
+  const currentUrl = "http://localhost:5000/";
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -181,8 +177,7 @@ exports.sendVerificationEmail = ({ email, _id }, res) => {
       newMailVerification
         .save()
         .then(() => {
-          transporter
-            .sendMail(mailOptions)
+          sendMail(mailOptions)
             .then(() => {
               // email sent and verification record saved
               res.json({
@@ -321,7 +316,7 @@ exports.sendResetPasswordEmail = async (req, res) => {
 const sendResetEmail = ({ _id, email }, redirectUrl, res) => {
   const resetString = uuidv4() + _id;
   PasswordReset.deleteMany({ userId: _id })
-    .then((result) => {
+    .then(() => {
       const mailOptions = {
         from: process.env.AUTH_EMAIL,
         to: email,
@@ -348,8 +343,7 @@ const sendResetEmail = ({ _id, email }, redirectUrl, res) => {
           newPasswordReset
             .save()
             .then(() => {
-              transporter
-                .sendMail(mailOptions)
+              sendMail(mailOptions)
                 .then(() => {
                   // reset email sent and password reset record saved
                   res.json({
@@ -394,7 +388,6 @@ const sendResetEmail = ({ _id, email }, redirectUrl, res) => {
 // the actual reset of the password
 exports.resetPassword = (req, res) => {
   let { userId, resetString, newPassword } = req.body;
-
   PasswordReset.find({ userId })
     .then((result) => {
       if (result.length > 0) {
