@@ -124,7 +124,7 @@ exports.signup = async (req, res) => {
           bcrypt.hash(password, saltRounds).then((hashedPassword) => {
             User.findOneAndUpdate(
               { _id: result[0]._id },
-              { password: hashedPassword },
+              { password: hashedPassword, validicAccess: false },
               { returnDocument: "after" }
             )
               .then((result) => {
@@ -153,7 +153,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = "http://localhost:8080/";
+  const currentUrl = process.env.REACT_APP_LOCAL_URL;
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -526,11 +526,14 @@ exports.updateNotification = (req, res) => {
 };
 
 exports.toggleValidicStatus = (req, res) => {
-  const { userId, status } = req.body;
+  const { uid, status } = req.body;
 
-  User.updateOne({ _id: userId }, { verified: status }, (err, result) => {
+  User.updateOne({ _id: uid }, { validicAccess: status }, (err, result) => {
     if (err) {
-      res.send(err);
+      res.send({
+        err: err,
+        message: "error while updating validic status",
+      });
     } else {
       res.send(result);
     }
