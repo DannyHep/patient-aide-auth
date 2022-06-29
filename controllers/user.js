@@ -149,7 +149,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = "http://localhost:5000/";
+  const currentUrl = process.env.REACT_APP_LOCAL_URL;
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -388,6 +388,7 @@ const sendResetEmail = ({ _id, email }, redirectUrl, res) => {
 // the actual reset of the password
 exports.resetPassword = (req, res) => {
   let { userId, resetString, newPassword } = req.body;
+
   PasswordReset.find({ userId })
     .then((result) => {
       if (result.length > 0) {
