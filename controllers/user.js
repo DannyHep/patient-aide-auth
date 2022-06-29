@@ -517,3 +517,18 @@ exports.updateNotification = (req, res) => {
     }
   });
 };
+
+exports.toggleValidicStatus = (req, res) => {
+  const { uid, status } = req.body;
+
+  User.updateOne({ _id: uid }, { validicAccess: status }, (err, result) => {
+    if (err) {
+      res.send({
+        err: err,
+        message: "error while updating validic status",
+      });
+    } else {
+      res.send(result);
+    }
+  });
+};
