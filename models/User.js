@@ -19,6 +19,10 @@ const UserSchema = new Schema({
     },
   ],
   validicAccess: Boolean,
+  reminder: {
+    minutes: Number,
+    hours: Number,
+  },
 });
 
 const User = mongoose.model("User", UserSchema);

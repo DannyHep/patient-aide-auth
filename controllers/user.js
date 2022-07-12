@@ -120,7 +120,7 @@ exports.signup = async (req, res) => {
           bcrypt.hash(password, saltRounds).then((hashedPassword) => {
             User.findOneAndUpdate(
               { _id: result[0]._id },
-              { password: hashedPassword },
+              { password: hashedPassword, validicAccess: false },
               { returnDocument: "after" }
             )
               .then((result) => {
@@ -517,6 +517,24 @@ exports.updateNotification = (req, res) => {
       res.send(result);
     }
   });
+};
+
+exports.updateReminder = (req, res) => {
+  const { userId, reminder } = req.body;
+
+  User.findOneAndUpdate(
+    { _id: userId },
+    { reminder: reminder },
+
+    { new: true },
+    (err, result) => {
+      if (err) {
+        res.send(err);
+      } else {
+        res.send(result);
+      }
+    }
+  );
 };
 
 exports.toggleValidicStatus = (req, res) => {
