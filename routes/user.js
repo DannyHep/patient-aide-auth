@@ -14,9 +14,8 @@ router.post("/resetPassword", userController.resetPassword);
 
 router.put("/updateNotification", userController.updateNotification);
 router.put("/updateValidicStatus", userController.toggleValidicStatus);
-
+router.put("/updateCredentials", userController.updateCredentials);
 router.put("/signup", userController.signup);
-
 router.put("/updateReminder", userController.updateReminder);
 
 router.get("/checkUserData", userController.checkUserData);

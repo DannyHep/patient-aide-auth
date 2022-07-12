@@ -209,7 +209,7 @@ exports.sendVerificationEmail = ({ email, _id }, res) => {
 };
 
 exports.signin = async (req, res) => {
-  let { username, password } = req.body;
+  const { username, password } = req.body;
   if (utils.containsEmptyCredentials(req.body)) {
     res.json({
       status: "Failed",
@@ -550,4 +550,89 @@ exports.toggleValidicStatus = (req, res) => {
       res.send(result);
     }
   });
+};
+
+exports.updateCredentials = (req, res) => {
+  const { userId, password, inputFieldName, newValue } = req.body;
+  console.log("here", userId, password, inputFieldName, newValue);
+  User.find({ _id: userId })
+    .then((result) => {
+      if (result.length === 1) {
+        bcrypt
+          .compare(password, result[0].password)
+          .then((result) => {
+            if (result) {
+              updateCredential(res, userId, inputFieldName, newValue);
+            } else {
+              res.json({
+                status: "Failed",
+                message: "Invalid password",
+              });
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+            res.json({
+              status: "Failed",
+              message: "Comparing password string failed",
+            });
+          });
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.json({
+        status: "Failed",
+        message: "An error ocurred when checking for the existing user",
+      });
+    });
+};
+
+const updateCredential = (res, userId, inputFieldName, newValue) => {
+  if (inputFieldName === "password") {
+    const saltRounds = 10;
+    bcrypt.hash(newValue, saltRounds).then((hashedNewPassword) => {
+      User.findOneAndUpdate(
+        { _id: userId },
+        { password: hashedNewPassword },
+        { new: true }
+      )
+        .then((data) => {
+          res.json({
+            data,
+            status: "Success",
+            message: `The password has been updated successfully`,
+            inputFieldName,
+          });
+        })
+        .catch((error) => {
+          res.json({
+            status: "Failed",
+            message: "An error ocurred while finalizing the password reset",
+            inputFieldName,
+          });
+        });
+    });
+  } else {
+    User.findOneAndUpdate(
+      { _id: userId },
+      { [inputFieldName]: newValue },
+      { new: true }
+    )
+      .then((data) => {
+        console.log(data);
+
+        res.json({
+          data,
+          status: "Success",
+          message: `The ${inputFieldName} has been updated successfully`,
+        });
+      })
+      .catch((error) => {
+        res.json({
+          status: "Failed",
+          message: `An error ocurred while finalizing the ${inputFieldName} reset`,
+        });
+      });
+  }
 };
