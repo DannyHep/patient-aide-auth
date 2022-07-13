@@ -9,7 +9,6 @@ const PasswordReset = require("../models/PasswordReset");
 const bcrypt = require("bcrypt");
 
 // email handler
-// const nodemailer = require("nodemailer");
 const sendgridMail = require("@sendgrid/mail");
 sendgridMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -226,13 +225,11 @@ exports.signin = async (req, res) => {
               status: "Failed",
               message:
                 "Email hasn't been verified yet. Please check your email",
-              data: data,
             });
           } else if (data[0].username !== username) {
             res.json({
               status: "Failed",
               message: "Invalid User Name",
-              data: data,
             });
           } else {
             const hashedPassword = data[0].password;
@@ -240,10 +237,11 @@ exports.signin = async (req, res) => {
               .compare(password, hashedPassword)
               .then((result) => {
                 if (result) {
+                  const { username, email, verified, _id, reminder } = data[0];
                   res.json({
                     status: "Success",
                     message: "Signin successful",
-                    data: data,
+                    data: { username, email, verified, reminder, _id },
                   });
                 } else {
                   res.json({
@@ -500,11 +498,6 @@ exports.resetPassword = (req, res) => {
     });
 };
 
-// util
-const isVerified = (users) => {
-  return users.some((user) => user.verified);
-};
-
 exports.updateNotification = (req, res) => {
   const { userId, notificationType, notificationId } = req.body;
   const objectToPush = {};
@@ -525,7 +518,6 @@ exports.updateReminder = (req, res) => {
   User.findOneAndUpdate(
     { _id: userId },
     { reminder: reminder },
-
     { new: true },
     (err, result) => {
       if (err) {
@@ -554,7 +546,7 @@ exports.toggleValidicStatus = (req, res) => {
 
 exports.updateCredentials = (req, res) => {
   const { userId, password, inputFieldName, newValue } = req.body;
-  console.log("here", userId, password, inputFieldName, newValue);
+
   User.find({ _id: userId })
     .then((result) => {
       if (result.length === 1) {
@@ -598,18 +590,18 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
         { new: true }
       )
         .then((data) => {
+          const { username, email, verified, _id, reminder } = data;
           res.json({
-            data,
-            status: "Success",
-            message: `The password has been updated successfully`,
-            inputFieldName,
+            credentialUpdateStatus: "Success",
+            credentialUpdateMessage: `The password has been updated`,
+            data: { username, email, verified, reminder, _id },
           });
         })
         .catch((error) => {
           res.json({
-            status: "Failed",
-            message: "An error ocurred while finalizing the password reset",
-            inputFieldName,
+            credentialUpdateStatus: "Failed",
+            credentialUpdateMessage:
+              "An error ocurred while finalizing the password reset",
           });
         });
     });
@@ -620,18 +612,17 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
       { new: true }
     )
       .then((data) => {
-        console.log(data);
-
+        const { username, email, verified, _id, reminder } = data;
         res.json({
-          data,
-          status: "Success",
-          message: `The ${inputFieldName} has been updated successfully`,
+          credentialUpdateStatus: "Success",
+          credentialUpdateMessage: `The ${inputFieldName} has been updated`,
+          data: { username, email, verified, reminder, _id },
         });
       })
       .catch((error) => {
         res.json({
-          status: "Failed",
-          message: `An error ocurred while finalizing the ${inputFieldName} reset`,
+          credentialUpdateStatus: "Failed",
+          credentialUpdateMessage: `An error ocurred while finalizing the ${inputFieldName} reset`,
         });
       });
   }
