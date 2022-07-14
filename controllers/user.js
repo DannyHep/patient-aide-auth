@@ -236,30 +236,22 @@ exports.signin = async (req, res) => {
             bcrypt
               .compare(password, hashedPassword)
               .then((result) => {
-                console.log(data);
                 if (result) {
-                  const {
-                    username,
-                    email,
-                    verified,
-                    _id,
-                    reminder,
-                    questionnaireIds,
-                    appointmentIds,
-                    validicAccess,
-                  } = data[0];
+                  // const {
+                  //   username,
+                  //   email,
+                  //   verified,
+                  //   _id,
+                  //   reminder,
+                  //   questionnaireIds,
+                  //   appointmentIds,
+                  //   validicAccess,
+                  // } = data[0];
                   res.json({
                     status: "Success",
                     message: "Signin successful",
                     data: {
-                      username,
-                      email,
-                      verified,
-                      reminder,
-                      _id,
-                      questionnaireIds,
-                      appointmentIds,
-                      validicAccess,
+                      data,
                     },
                   });
                 } else {
