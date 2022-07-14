@@ -148,7 +148,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = process.env.REACT_APP_LOCAL_URL;
+  const currentUrl = process.env.REACT_APP_LOGIN_API;
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -237,11 +237,29 @@ exports.signin = async (req, res) => {
               .compare(password, hashedPassword)
               .then((result) => {
                 if (result) {
-                  const { username, email, verified, _id, reminder } = data[0];
+                  const {
+                    username,
+                    email,
+                    verified,
+                    _id,
+                    reminder,
+                    questionnaireIds,
+                    appointmentIds,
+                    validicAccess,
+                  } = data[0];
                   res.json({
                     status: "Success",
                     message: "Signin successful",
-                    data: { username, email, verified, reminder, _id },
+                    data: {
+                      username,
+                      email,
+                      verified,
+                      reminder,
+                      _id,
+                      questionnaireIds,
+                      appointmentIds,
+                      validicAccess,
+                    },
                   });
                 } else {
                   res.json({
