@@ -537,11 +537,34 @@ exports.updateReminder = (req, res) => {
     { _id: userId },
     { reminder: reminder },
     { new: true },
-    (err, result) => {
+    (err, data) => {
       if (err) {
         res.send(err);
       } else {
-        res.send(result);
+        const {
+          username,
+          email,
+          verified,
+          _id,
+          reminder,
+          questionnaireIds,
+          appointmentIds,
+          validicAccess,
+        } = data;
+        res.json({
+          updateReminderPreferenceStatus: "Success",
+          updateReminderPreferenceMessage: `The password has been updated`,
+          data: {
+            username,
+            email,
+            verified,
+            reminder,
+            _id,
+            questionnaireIds,
+            appointmentIds,
+            validicAccess,
+          },
+        });
       }
     }
   );
@@ -608,11 +631,29 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
         { new: true }
       )
         .then((data) => {
-          const { username, email, verified, _id, reminder } = data;
+          const {
+            username,
+            email,
+            verified,
+            _id,
+            reminder,
+            questionnaireIds,
+            appointmentIds,
+            validicAccess,
+          } = data;
           res.json({
             credentialUpdateStatus: "Success",
             credentialUpdateMessage: `The password has been updated`,
-            data: { username, email, verified, reminder, _id },
+            data: {
+              username,
+              email,
+              verified,
+              reminder,
+              _id,
+              questionnaireIds,
+              appointmentIds,
+              validicAccess,
+            },
           });
         })
         .catch((error) => {
@@ -630,11 +671,29 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
       { new: true }
     )
       .then((data) => {
-        const { username, email, verified, _id, reminder } = data;
+        const {
+          username,
+          email,
+          verified,
+          _id,
+          reminder,
+          questionnaireIds,
+          appointmentIds,
+          validicAccess,
+        } = data;
         res.json({
           credentialUpdateStatus: "Success",
           credentialUpdateMessage: `The ${inputFieldName} has been updated`,
-          data: { username, email, verified, reminder, _id },
+          data: {
+            username,
+            email,
+            verified,
+            reminder,
+            _id,
+            questionnaireIds,
+            appointmentIds,
+            validicAccess,
+          },
         });
       })
       .catch((error) => {
