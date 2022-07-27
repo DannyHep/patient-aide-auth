@@ -148,7 +148,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = process.env.REACT_APP_LOGIN_API;
+  const currentUrl = process.env.REACT_APP_LOCAL_URL;
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -246,6 +246,7 @@ exports.signin = async (req, res) => {
                     questionnaireIds,
                     appointmentIds,
                     validicAccess,
+                    careContacts,
                   } = data[0];
                   res.json({
                     status: "Success",
@@ -259,6 +260,7 @@ exports.signin = async (req, res) => {
                       questionnaireIds,
                       appointmentIds,
                       validicAccess,
+                      careContacts,
                     },
                   });
                 } else {
@@ -550,6 +552,7 @@ exports.updateReminder = (req, res) => {
           questionnaireIds,
           appointmentIds,
           validicAccess,
+          careContacts,
         } = data;
         res.json({
           updateReminderPreferenceStatus: "Success",
@@ -563,6 +566,7 @@ exports.updateReminder = (req, res) => {
             questionnaireIds,
             appointmentIds,
             validicAccess,
+            careContacts,
           },
         });
       }
@@ -640,6 +644,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
             questionnaireIds,
             appointmentIds,
             validicAccess,
+            careContacts,
           } = data;
           res.json({
             credentialUpdateStatus: "Success",
@@ -653,6 +658,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
               questionnaireIds,
               appointmentIds,
               validicAccess,
+              careContacts,
             },
           });
         })
@@ -680,6 +686,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
           questionnaireIds,
           appointmentIds,
           validicAccess,
+          careContacts,
         } = data;
         res.json({
           credentialUpdateStatus: "Success",
@@ -693,6 +700,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
             questionnaireIds,
             appointmentIds,
             validicAccess,
+            careContacts,
           },
         });
       })
@@ -703,4 +711,48 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
         });
       });
   }
+};
+
+exports.updateCareContacts = (req, res) => {
+  const { data, uid } = req.body;
+
+  const objectToPush = {};
+  objectToPush["careContacts"] = [data];
+
+  User.updateOne({ _id: uid }, { $push: objectToPush }, (err, result) => {
+    if (err) {
+      res.send({
+        err: err,
+        message: "error while updating contact list",
+      });
+    } else {
+      res.send(result);
+    }
+  });
+};
+
+exports.deleteCareContact = (req, res) => {
+  const { uid, contactId } = req.body;
+  User.updateOne(
+    { _id: uid },
+    { $pull: { careContacts: { _id: contactId } } },
+    (err, result) => {
+      if (err) {
+        res.send({
+          err: err,
+          message: "error while deleting contact",
+        });
+      } else {
+        res.send("return data");
+      }
+    }
+  );
+};
+
+exports.getCareContacts = (req, res) => {
+  const { uid } = req.body;
+  console.log(uid);
+  User.findOne({ _id: uid }, "careContacts", (err, result) => {
+    res.send(result);
+  });
 };

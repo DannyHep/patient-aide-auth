@@ -23,6 +23,22 @@ const UserSchema = new Schema({
     minutes: Number,
     hours: Number,
   },
+  careContacts: [
+    {
+      firstName: String,
+      lastName: String,
+      contactNumber: String,
+      address: {
+        addressLine1: String,
+        addressLine2: String,
+        city: String,
+        postCode: String,
+      },
+      relationship: String,
+      email: String,
+      isDelegate: String,
+    },
+  ],
 });
 
 const User = mongoose.model("User", UserSchema);
