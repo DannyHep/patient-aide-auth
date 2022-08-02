@@ -715,7 +715,6 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
 
 exports.updateCareContacts = (req, res) => {
   const { data, uid } = req.body;
-
   const objectToPush = {};
   objectToPush["careContacts"] = [data];
 
@@ -751,8 +750,50 @@ exports.deleteCareContact = (req, res) => {
 
 exports.getCareContacts = (req, res) => {
   const { uid } = req.body;
-  console.log(uid);
   User.findOne({ _id: uid }, "careContacts", (err, result) => {
     res.send(result);
   });
+};
+
+exports.updateCareContact = (req, res) => {
+  const { uid, data, contact } = req.body;
+  const { _id } = contact;
+
+  User.updateOne(
+    { _id: uid },
+    {
+      $set: {
+        "careContacts.$[contact].firstName": data.firstName,
+        "careContacts.$[contact].lastName": data.lastName,
+        "careContacts.$[contact].contactNumber": data.contactNumber,
+        "careContacts.$[contact].email": data.email,
+        "careContacts.$[contact].relationship": data.relationship,
+        "careContacts.$[contact].isDelegate": data.isDelegate,
+        "careContacts.$[contact].address.addressLine1":
+          data.address.addressLine1,
+        "careContacts.$[contact].address.addressLine2":
+          data.address.addressLine2,
+        "careContacts.$[contact].address.city": data.address.city,
+        "careContacts.$[contact].address.postCode": data.address.postCode,
+        "careContacts.$[contact]._id": _id,
+      },
+    },
+    {
+      arrayFilters: [
+        {
+          "contact._id": _id,
+        },
+      ],
+    },
+    (err, result) => {
+      if (err) {
+        res.send({
+          err: err,
+          message: "error while updating contact",
+        });
+      } else {
+        res.send(200, result);
+      }
+    }
+  );
 };

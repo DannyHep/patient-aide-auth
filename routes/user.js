@@ -11,11 +11,11 @@ const bcrypt = require("bcrypt");
 router.post("/signin", userController.signin);
 router.post("/requestPasswordReset", userController.sendResetPasswordEmail);
 router.post("/resetPassword", userController.resetPassword);
-router.post("/careContacts", userController.updateCareContacts)
-router.post("/careContacts/retrieveContacts", userController.getCareContacts)
+router.post("/careContacts", userController.updateCareContacts);
+router.post("/careContacts/retrieveContacts", userController.getCareContacts);
 
-
-router.put("/careContacts", userController.deleteCareContact)
+router.put("/careContacts", userController.deleteCareContact);
+router.put("/careContacts/editContact", userController.updateCareContact);
 router.put("/updateNotification", userController.updateNotification);
 router.put("/updateValidicStatus", userController.toggleValidicStatus);
 router.put("/updateCredentials", userController.updateCredentials);
@@ -120,6 +120,5 @@ router.get("/verify/:userId/:uniqueString", (req, res) => {
 router.get("/verified", (req, res) => {
   res.sendFile(path.join(__dirname, "./../views/verified.html"));
 });
-
 
 module.exports = router;
