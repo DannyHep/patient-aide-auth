@@ -121,4 +121,6 @@ router.get("/verified", (req, res) => {
   res.sendFile(path.join(__dirname, "./../views/verified.html"));
 });
 
+router.post("/add", userController.addUser);
+
 module.exports = router;
