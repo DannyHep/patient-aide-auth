@@ -202,6 +202,7 @@ exports.sendVerificationEmail = ({ email, _id }, res) => {
 
 exports.sendLoginDetailsUpdatedEmail = async (
   { email, inputFieldName, newValue, _id },
+  res
 ) => {
   if (inputFieldName === "email") {
     const emailVerificationConfig = { email: newValue, _id: _id };
