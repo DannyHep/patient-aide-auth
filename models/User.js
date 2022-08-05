@@ -39,6 +39,7 @@ const UserSchema = new Schema({
       isDelegate: String,
     },
   ],
+  PASID: String,
 });
 
 const User = mongoose.model("User", UserSchema);

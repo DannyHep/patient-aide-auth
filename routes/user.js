@@ -25,12 +25,14 @@ router.put("/updateReminder", userController.updateReminder);
 router.get("/checkUserData", userController.checkUserData);
 router.get("/verify/:userId/:uniqueString", (req, res) => {
   let { userId, uniqueString } = req.params;
-  MailVerification.find({ userId })
+  console.log(uniqueString, "uniquestring", userId, "userid");
+  MailVerification.findOne({ userId })
     .then((result) => {
-      if (result.length > 0) {
+      console.log(result.uniqueString, "mail verification");
+      if (result) {
         // user verification record exists, so, we proceed
-        const { expiresAt } = result[0];
-        const hashedUniqueString = result[0].uniqueString;
+        const { expiresAt } = result;
+        const hashedUniqueString = result.uniqueString;
         // checking for expired unique string
         if (expiresAt < Date.now()) {
           MailVerification.deleteOne({ userId })
@@ -63,6 +65,7 @@ router.get("/verify/:userId/:uniqueString", (req, res) => {
           bcrypt
             .compare(uniqueString, hashedUniqueString)
             .then((result) => {
+              console.log(result, "second");
               if (result) {
                 // string match
                 User.updateOne({ _id: userId }, { verified: true })
@@ -77,7 +80,7 @@ router.get("/verify/:userId/:uniqueString", (req, res) => {
                         console.log(error);
                         let message =
                           "An error occurred while finalizing successful verification";
-                        req.redirect(
+                        res.redirect(
                           `/user/verified/?error=true&message=${message}`
                         );
                       });
@@ -86,21 +89,21 @@ router.get("/verify/:userId/:uniqueString", (req, res) => {
                     console.log(error);
                     let message =
                       "An error occurred while updating user record to show verified";
-                    req.redirect(
+                    res.redirect(
                       `/user/verified/?error=true&message=${message}`
                     );
                   });
               } else {
                 let message =
                   "Invalid verification details passed. Please check your inbox";
-                req.redirect(`/user/verified/?error=true&message=${message}`);
+                res.redirect(`/user/verified/?error=true&message=${message}`);
               }
             })
             .catch((error) => {
               console.log(error);
               let message =
                 "An error occurred while checking for existing user verification record";
-              req.redirect(`/user/verified/?error=true&message=${message}`);
+              res.redirect(`/user/verified/?error=true&message=${message}`);
             });
         }
       } else {

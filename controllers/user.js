@@ -56,7 +56,8 @@ exports.checkUserData = async (req, res) => {
 };
 
 exports.signup = async (req, res) => {
-  const { email, password, registrationCode, validationCode } = req.body;
+  const { email, password, registrationCode, validationCode, username } =
+    req.body;
   if (utils.containsEmptyCredentials(req.body)) {
     res.json({
       status: "Failed",
@@ -85,30 +86,18 @@ exports.signup = async (req, res) => {
   } else {
     // check is the user already exists
     try {
-      await User.find({ email }).then((result) => {
-        // check if email exists (is provided by NHS) and is not yet verified
-        if (!result.length) {
-          res.json({
-            status: "Failed",
-            message: "An error ocurred while checking for existing user!",
-          });
-        } else if (result.length > 1) {
-          res.json({
-            status: "Failed",
-            message:
-              "This email address is duplicate, please contact your administrator",
-          });
-        } else if (result[0].verified) {
+      User.findOne({ email }).then((result) => {
+        if (result.verified) {
           res.json({
             status: "Failed",
             message: "This email address is already verified",
           });
-        } else if (result[0].registrationCode !== registrationCode) {
+        } else if (result.registrationCode !== registrationCode) {
           res.json({
             status: "Failed",
             message: "Please check your Registration Code",
           });
-        } else if (result[0].validationCode !== validationCode) {
+        } else if (result.validationCode !== validationCode) {
           res.json({
             status: "Failed",
             message: "Please check your Validation Code",
@@ -118,8 +107,12 @@ exports.signup = async (req, res) => {
           const saltRounds = 10;
           bcrypt.hash(password, saltRounds).then((hashedPassword) => {
             User.findOneAndUpdate(
-              { _id: result[0]._id },
-              { password: hashedPassword, validicAccess: false },
+              { _id: result._id },
+              {
+                password: hashedPassword,
+                validicAccess: false,
+                username: username,
+              },
               { returnDocument: "after" }
             )
               .then((result) => {
@@ -148,7 +141,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = process.env.REACT_APP_LOCAL_URL;
+  const currentUrl = process.env.HOSTED_URL;
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -207,6 +200,47 @@ exports.sendVerificationEmail = ({ email, _id }, res) => {
     });
 };
 
+exports.sendLoginDetailsUpdatedEmail = async (
+  { email, inputFieldName, newValue, _id },
+) => {
+  if (inputFieldName === "email") {
+    const emailVerificationConfig = { email: newValue, _id: _id };
+    const mailOptions = {
+      from: process.env.AUTH_EMAIL,
+      to: email,
+      subject: `${inputFieldName} changed`,
+      html: `<p>Your ${inputFieldName} has been updated. An email has been sent to your updated email address for verification</p>
+     <p>If you did not request this, please contact <b>033493939959</b>.</p>`,
+    };
+    try {
+      await sendMail(mailOptions);
+      exports.sendVerificationEmail(emailVerificationConfig, res);
+    } catch (error) {
+      res.json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  } else {
+    //mail options
+    const mailOptions = {
+      from: process.env.AUTH_EMAIL,
+      to: email,
+      subject: `${inputFieldName} changed`,
+      html: `<p>Your ${inputFieldName} has been updated.</p>
+   <p>If you did not request this, please contact <b>033493939959</b>.</p>`,
+    };
+    try {
+      await sendMail(mailOptions);
+    } catch (error) {
+      res.json({
+        status: "Failed",
+        message: error,
+      });
+    }
+  }
+};
+
 exports.signin = async (req, res) => {
   const { username, password } = req.body;
   if (utils.containsEmptyCredentials(req.body)) {
@@ -247,6 +281,7 @@ exports.signin = async (req, res) => {
                     appointmentIds,
                     validicAccess,
                     careContacts,
+                    PASID,
                   } = data[0];
                   res.json({
                     status: "Success",
@@ -261,6 +296,7 @@ exports.signin = async (req, res) => {
                       appointmentIds,
                       validicAccess,
                       careContacts,
+                      PASID,
                     },
                   });
                 } else {
@@ -553,6 +589,7 @@ exports.updateReminder = (req, res) => {
           appointmentIds,
           validicAccess,
           careContacts,
+          PASID,
         } = data;
         res.json({
           updateReminderPreferenceStatus: "Success",
@@ -567,6 +604,7 @@ exports.updateReminder = (req, res) => {
             appointmentIds,
             validicAccess,
             careContacts,
+            PASID,
           },
         });
       }
@@ -592,13 +630,23 @@ exports.toggleValidicStatus = (req, res) => {
 exports.updateCredentials = (req, res) => {
   const { userId, password, inputFieldName, newValue } = req.body;
 
-  User.find({ _id: userId })
-    .then((result) => {
-      if (result.length === 1) {
+  User.findOne({ _id: userId })
+    .then((patient) => {
+      if (patient) {
+        const loginDetailsUpdatedValues = {
+          email: patient.email,
+          inputFieldName: inputFieldName,
+          newValue: newValue,
+          _id: patient._id,
+        };
         bcrypt
-          .compare(password, result[0].password)
+          .compare(password, patient.password)
           .then((result) => {
             if (result) {
+              exports.sendLoginDetailsUpdatedEmail(
+                loginDetailsUpdatedValues,
+                res
+              );
               updateCredential(res, userId, inputFieldName, newValue);
             } else {
               res.json({
@@ -645,6 +693,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
             appointmentIds,
             validicAccess,
             careContacts,
+            PASID,
           } = data;
           res.json({
             credentialUpdateStatus: "Success",
@@ -659,6 +708,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
               appointmentIds,
               validicAccess,
               careContacts,
+              PASID,
             },
           });
         })
@@ -670,6 +720,48 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
           });
         });
     });
+  } else if (inputFieldName === "email") {
+    User.findOneAndUpdate(
+      { _id: userId },
+      { email: newValue, verified: false },
+      { new: true }
+    )
+      .then((data) => {
+        const {
+          username,
+          email,
+          verified,
+          _id,
+          reminder,
+          questionnaireIds,
+          appointmentIds,
+          validicAccess,
+          careContacts,
+          PASID,
+        } = data;
+        res.json({
+          credentialUpdateStatus: "Success",
+          credentialUpdateMessage: `The ${inputFieldName} has been updated`,
+          data: {
+            username,
+            email,
+            verified,
+            reminder,
+            _id,
+            questionnaireIds,
+            appointmentIds,
+            validicAccess,
+            careContacts,
+            PASID,
+          },
+        });
+      })
+      .catch((error) => {
+        res.json({
+          credentialUpdateStatus: "Failed",
+          credentialUpdateMessage: `An error ocurred while finalizing the ${inputFieldName} reset`,
+        });
+      });
   } else {
     User.findOneAndUpdate(
       { _id: userId },
@@ -687,6 +779,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
           appointmentIds,
           validicAccess,
           careContacts,
+          PASID,
         } = data;
         res.json({
           credentialUpdateStatus: "Success",
@@ -701,6 +794,7 @@ const updateCredential = (res, userId, inputFieldName, newValue) => {
             appointmentIds,
             validicAccess,
             careContacts,
+            PASID,
           },
         });
       })
