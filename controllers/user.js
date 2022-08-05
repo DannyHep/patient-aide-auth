@@ -892,3 +892,26 @@ exports.updateCareContact = (req, res) => {
     }
   );
 };
+exports.addUser = async (req, res) => {
+  const { email, registrationCode, validationCode, PASID } = req.body;
+
+  const userBody = {
+    email,
+    registrationCode,
+    validationCode,
+    password: "",
+    verified: false,
+    PASID,
+  };
+
+  const newUser = new User(userBody);
+  try {
+    const createdUser = await newUser.save();
+
+    res
+      .status(201)
+      .send({ success: true, message: "User created successfully" });
+  } catch (error) {
+    res.status(500).send({ success: false, message: "User not saved" });
+  }
+};
