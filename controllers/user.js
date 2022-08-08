@@ -141,7 +141,7 @@ exports.signup = async (req, res) => {
 
 exports.sendVerificationEmail = ({ email, _id }, res) => {
   // url to be used in the email
-  const currentUrl = process.env.HOSTED_URL;
+  const currentUrl = "http://localhost:5000/";
   const uniqueString = uuidv4() + _id;
   //mail options
   const mailOptions = {
@@ -171,74 +171,68 @@ exports.sendVerificationEmail = ({ email, _id }, res) => {
         .then(() => {
           sendMail(mailOptions)
             .then(() => {
+              if (res) {
+                res.json({
+                  status: "Pending",
+                  message: "Verification email sent",
+                });
+              } else {
+                return "success";
+              }
               // email sent and verification record saved
-              res.json({
-                status: "Pending",
-                message: "Verification email sent",
-              });
             })
             .catch((error) => {
               console.log(error);
-              res.json({
-                status: "Failed",
-                message: "Verification email failed",
-              });
+              if (res) {
+                res.json({
+                  status: "Failed",
+                  message: "Verification email failed",
+                });
+              }
             });
         })
         .catch(() => {
-          res.json({
-            status: "Failed",
-            message: "Couldn't save verification email data",
-          });
+          if (res) {
+            res.json({
+              status: "Failed",
+              message: "Couldn't save verification email data",
+            });
+          }
         });
     })
     .catch(() => {
-      res.json({
-        status: "Failed",
-        message: "An error occurred while hashing email data",
-      });
+      if (res) {
+        res.json({
+          status: "Failed",
+          message: "An error occurred while hashing email data",
+        });
+      }
     });
 };
 
-exports.sendLoginDetailsUpdatedEmail = async (
-  { email, inputFieldName, newValue, _id },
-  res
-) => {
+exports.sendLoginDetailsUpdatedEmail = async ({ email, inputFieldName }) => {
+  let mailOptions = {};
   if (inputFieldName === "email") {
-    const emailVerificationConfig = { email: newValue, _id: _id };
-    const mailOptions = {
+    mailOptions = {
       from: process.env.AUTH_EMAIL,
       to: email,
       subject: `${inputFieldName} changed`,
       html: `<p>Your ${inputFieldName} has been updated. An email has been sent to your updated email address for verification</p>
      <p>If you did not request this, please contact <b>033493939959</b>.</p>`,
     };
-    try {
-      await sendMail(mailOptions);
-      exports.sendVerificationEmail(emailVerificationConfig, res);
-    } catch (error) {
-      res.json({
-        status: "Failed",
-        message: error,
-      });
-    }
   } else {
-    //mail options
-    const mailOptions = {
+    mailOptions = {
       from: process.env.AUTH_EMAIL,
       to: email,
       subject: `${inputFieldName} changed`,
       html: `<p>Your ${inputFieldName} has been updated.</p>
-   <p>If you did not request this, please contact <b>033493939959</b>.</p>`,
+     <p>If you did not request this, please contact <b>033493939959</b>.</p>`,
     };
-    try {
-      await sendMail(mailOptions);
-    } catch (error) {
-      res.json({
-        status: "Failed",
-        message: error,
-      });
-    }
+  }
+  try {
+    await sendMail(mailOptions);
+  } catch (error) {
+    return error;
   }
 };
 
@@ -644,11 +638,23 @@ exports.updateCredentials = (req, res) => {
           .compare(password, patient.password)
           .then((result) => {
             if (result) {
-              exports.sendLoginDetailsUpdatedEmail(
-                loginDetailsUpdatedValues,
-                res
-              );
-              updateCredential(res, userId, inputFieldName, newValue);
+              try {
+                exports
+                  .sendLoginDetailsUpdatedEmail(loginDetailsUpdatedValues)
+                  .then(() => {
+                    if (loginDetailsUpdatedValues.inputFieldName === "email") {
+                      const verificationEmailConfig = {
+                        email: loginDetailsUpdatedValues.newValue,
+                        _id: loginDetailsUpdatedValues._id,
+                      };
+                      exports.sendVerificationEmail(verificationEmailConfig);
+                      User.updateOne({ _id: userId }, { verified: false });
+                    }
+                    updateCredential(res, userId, inputFieldName, newValue);
+                  });
+              } catch (error) {
+                res.json({ error });
+              }
             } else {
               res.json({
                 status: "Failed",
